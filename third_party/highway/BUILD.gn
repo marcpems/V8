@@ -13,7 +13,7 @@ config("libhwy_external_config") {
     # explicitly disabling AVX2 and AVX3 targets.
     defines += [ "HWY_BROKEN_TARGETS=(HWY_AVX2|HWY_AVX3)" ]
   }
-  if (target_cpu == "arm64") {
+  if (target_cpu == "arm64" || target_cpu == "arm64ec") {
     # There are Chrome targets that use HWY_ALIGN on absl::uint128. This breaks
     # with SVE, since HWY_ALIGN == 8 for it and the minimal alignment requirement
     # for absl::uint128 is 16.

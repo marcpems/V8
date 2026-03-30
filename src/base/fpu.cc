@@ -63,7 +63,12 @@ constexpr int kFlushDenormToZeroBit = (1 << 24);
 int GetStatusWord() {
   int result;
 #if defined(V8_HOST_ARCH_ARM64)
+#if defined(V8_HOST_ARCH_ARM64EC) && defined(V8_CC_MSVC) && !defined(__clang__)
+  // On ARM64EC with MSVC, use the _ReadStatusReg intrinsic.
+  result = static_cast<int>(_ReadStatusReg(0x5A20));  // FPCR
+#else
   asm volatile("mrs %x[result], FPCR" : [result] "=r"(result));
+#endif
 #else
   asm volatile("vmrs %[result], FPSCR" : [result] "=r"(result));
 #endif
@@ -72,7 +77,12 @@ int GetStatusWord() {
 
 void SetStatusWord(int a) {
 #if defined(V8_HOST_ARCH_ARM64)
+#if defined(V8_HOST_ARCH_ARM64EC) && defined(V8_CC_MSVC) && !defined(__clang__)
+  // On ARM64EC with MSVC, use the _WriteStatusReg intrinsic.
+  _WriteStatusReg(0x5A20, static_cast<__int64>(a));  // FPCR
+#else
   asm volatile("msr FPCR, %x[src]" : : [src] "r"(a));
+#endif
 #else
   asm volatile("vmsr FPSCR, %[src]" : : [src] "r"(a));
 #endif

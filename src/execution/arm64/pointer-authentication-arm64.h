@@ -21,6 +21,10 @@ V8_INLINE Address SignPC(Address pc, Address sp) {
 #ifdef USE_SIMULATOR
   pc = Simulator::AddPAC(pc, sp, Simulator::kPACKeyIB,
                          Simulator::kInstructionPointer);
+#elif defined(V8_TARGET_ARCH_ARM64EC)
+  // ARM64EC does not support pointer authentication instructions.
+  // Return pc unsigned.
+  USE(sp);
 #else
   asm volatile(
       "  mov x17, %[pc]\n"
@@ -38,6 +42,10 @@ V8_INLINE Address AuthPAC(Address pc, Address sp) {
 #ifdef USE_SIMULATOR
   pc = Simulator::AuthPAC(pc, sp, Simulator::kPACKeyIB,
                           Simulator::kInstructionPointer);
+#elif defined(V8_TARGET_ARCH_ARM64EC)
+  // ARM64EC does not support pointer authentication instructions.
+  // Return pc as-is (no verification).
+  USE(sp);
 #else
   asm volatile(
       "  mov x17, %[pc]\n"
@@ -76,6 +84,9 @@ V8_INLINE Address PointerAuthentication::AuthenticatePC(
 V8_INLINE Address PointerAuthentication::StripPAC(Address pc) {
 #ifdef USE_SIMULATOR
   return Simulator::StripPAC(pc, Simulator::kInstructionPointer);
+#elif defined(V8_TARGET_ARCH_ARM64EC)
+  // ARM64EC does not support pointer authentication.
+  return pc;
 #else
   // x30 == lr, but use 'x30' instead of 'lr' below, as GCC does not accept
   // 'lr' in the clobbers list.
@@ -109,6 +120,11 @@ V8_INLINE void PointerAuthentication::ReplacePC(Address* pc_address,
   CHECK_EQ(auth_old_pc, raw_old_pc);
   new_pc = Simulator::AddPAC(new_pc, sp, Simulator::kPACKeyIB,
                              Simulator::kInstructionPointer);
+#elif defined(V8_TARGET_ARCH_ARM64EC)
+  // ARM64EC does not support pointer authentication.
+  // Just use the new_pc as-is, no signing or verification.
+  USE(old_pc);
+  USE(sp);
 #else
   // Only store newly signed address after we have verified that the old
   // address is authenticated.

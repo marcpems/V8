@@ -121,6 +121,10 @@ bool TryHandleWasmTrap(EXCEPTION_POINTERS* exception) {
 #if V8_HOST_ARCH_X64
   exception->ContextRecord->Rip = gLandingPad;
   exception->ContextRecord->R10 = fault_addr;
+#elif V8_HOST_ARCH_ARM64EC
+  // ARM64EC uses the x64 exception context structure.
+  exception->ContextRecord->Rip = gLandingPad;
+  exception->ContextRecord->R10 = fault_addr;
 #elif V8_HOST_ARCH_ARM64
   exception->ContextRecord->Pc = gLandingPad;
   exception->ContextRecord->X16 = fault_addr;

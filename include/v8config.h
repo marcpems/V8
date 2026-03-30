@@ -865,7 +865,13 @@ V8 shared library set USING_V8_SHARED.
 // The V8_HOST_ARCH_* macros correspond to the architecture on which V8, as a
 // virtual machine and compiler, runs. Don't confuse this with the architecture
 // on which V8 is built.
-#if defined(_M_X64) || defined(__x86_64__)
+// ARM64EC detection must come before x64 and arm64, because MSVC defines both
+// _M_ARM64EC and _M_AMD64 for ARM64EC, while clang defines __aarch64__.
+#if defined(_M_ARM64EC)
+#define V8_HOST_ARCH_ARM64 1
+#define V8_HOST_ARCH_ARM64EC 1
+#define V8_HOST_ARCH_64_BIT 1
+#elif defined(_M_X64) || defined(__x86_64__)
 #define V8_HOST_ARCH_X64 1
 #if defined(__x86_64__) && __SIZEOF_POINTER__ == 4  // Check for x32.
 #define V8_HOST_ARCH_32_BIT 1
@@ -917,7 +923,11 @@ V8 shared library set USING_V8_SHARED.
     !V8_TARGET_ARCH_PPC64 && !V8_TARGET_ARCH_S390X &&                     \
     !V8_TARGET_ARCH_RISCV64 && !V8_TARGET_ARCH_LOONG64 &&                 \
     !V8_TARGET_ARCH_RISCV32
-#if defined(_M_X64) || defined(__x86_64__)
+// ARM64EC must be checked before x64 because MSVC defines _M_AMD64 for EC.
+#if defined(_M_ARM64EC)
+#define V8_TARGET_ARCH_ARM64 1
+#define V8_TARGET_ARCH_ARM64EC 1
+#elif defined(_M_X64) || defined(__x86_64__)
 #define V8_TARGET_ARCH_X64 1
 #elif defined(_M_IX86) || defined(__i386__)
 #define V8_TARGET_ARCH_IA32 1
@@ -992,6 +1002,10 @@ V8 shared library set USING_V8_SHARED.
 #endif
 #if (V8_TARGET_ARCH_ARM64 && !(V8_HOST_ARCH_X64 || V8_HOST_ARCH_ARM64))
 #error Target architecture arm64 is only supported on arm64 and x64 host
+#endif
+// ARM64EC target is valid on ARM64 (including ARM64EC) and x64 hosts.
+#if V8_TARGET_ARCH_ARM64EC && !(V8_HOST_ARCH_ARM64 || V8_HOST_ARCH_X64)
+#error Target architecture arm64ec is only supported on arm64 and x64 host
 #endif
 #if (V8_TARGET_ARCH_MIPS64 && !(V8_HOST_ARCH_X64 || V8_HOST_ARCH_MIPS64))
 #error Target architecture mips64 is only supported on mips64 and x64 host

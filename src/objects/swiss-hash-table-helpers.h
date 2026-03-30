@@ -20,7 +20,7 @@
 // The following #defines are taken from Abseil's have_sse.h (but renamed).
 #ifndef V8_SWISS_TABLE_HAVE_SSE2_HOST
 #if (defined(__SSE2__) ||  \
-     (defined(_MSC_VER) && \
+     (defined(_MSC_VER) && !defined(_M_ARM64EC) && \
       (defined(_M_X64) || (defined(_M_IX86) && _M_IX86_FP >= 2))))
 #define V8_SWISS_TABLE_HAVE_SSE2_HOST 1
 #else

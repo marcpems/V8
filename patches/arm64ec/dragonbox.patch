@@ -1,0 +1,49 @@
+diff --git a/include/dragonbox/dragonbox.h b/include/dragonbox/dragonbox.h
+index 84d6e24..f5a263d 100644
+--- a/include/dragonbox/dragonbox.h
++++ b/include/dragonbox/dragonbox.h
+@@ -792,7 +792,7 @@ namespace JKJ_NAMESPACE {
+                         low_ = stdr::uint_least64_t(result);
+                         __builtin_ia32_addcarry_u64(carry, high_, 0, &result);
+                         high_ = stdr::uint_least64_t(result);
+-    #elif defined(_MSC_VER) && defined(_M_X64)
++    #elif defined(_MSC_VER) && defined(_M_X64) && !defined(_M_ARM64EC)
+                         // On MSVC, uint_least64_t and __int64 must be unsigned long long; see
+                         // https://learn.microsoft.com/en-us/cpp/c-runtime-library/standard-types
+                         // and https://learn.microsoft.com/en-us/cpp/cpp/int8-int16-int32-int64.
+@@ -871,7 +871,7 @@ namespace JKJ_NAMESPACE {
+     #if defined(__SIZEOF_INT128__)
+                     auto const result = builtin_uint128_t(x) * builtin_uint128_t(y);
+                     return {stdr::uint_least64_t(result >> 64), stdr::uint_least64_t(result)};
+-    #elif defined(_MSC_VER) && defined(_M_X64)
++    #elif defined(_MSC_VER) && defined(_M_X64) && !defined(_M_ARM64EC)
+                     JKJ_IF_CONSTEVAL {
+                         // This redundant variable is to workaround MSVC's codegen bug caused by the
+                         // interaction of NRVO and intrinsics.
+@@ -916,7 +916,7 @@ namespace JKJ_NAMESPACE {
+     #if defined(__SIZEOF_INT128__)
+                     auto const result = builtin_uint128_t(x) * builtin_uint128_t(y);
+                     return stdr::uint_least64_t(result >> 64);
+-    #elif defined(_MSC_VER) && defined(_M_X64)
++    #elif defined(_MSC_VER) && defined(_M_X64) && !defined(_M_ARM64EC)
+                     JKJ_IF_CONSTEVAL {
+                         // This redundant variable is to workaround MSVC's codegen bug caused by the
+                         // interaction of NRVO and intrinsics.
+@@ -953,7 +953,7 @@ namespace JKJ_NAMESPACE {
+                     uint64_32
+     #endif
+                     umul96(stdr::uint_fast32_t x, stdr::uint_least64_t y) noexcept {
+-    #if defined(__SIZEOF_INT128__) || (defined(_MSC_VER) && defined(_M_X64))
++    #if defined(__SIZEOF_INT128__) || (defined(_MSC_VER) && defined(_M_X64) && !defined(_M_ARM64EC))
+                     auto const r128 = umul128(stdr::uint_least64_t(x), y);
+ 
+                     auto const high = stdr::uint_least32_t(r128.high());
+@@ -985,7 +985,7 @@ namespace JKJ_NAMESPACE {
+                 // unsigned integer.
+                 inline JKJ_CONSTEXPR20 stdr::uint_least64_t
+                 umul96_upper64(stdr::uint_least32_t x, stdr::uint_least64_t y) noexcept {
+-    #if defined(__SIZEOF_INT128__) || (defined(_MSC_VER) && defined(_M_X64))
++    #if defined(__SIZEOF_INT128__) || (defined(_MSC_VER) && defined(_M_X64) && !defined(_M_ARM64EC))
+                     return umul128_upper64(stdr::uint_least64_t(x) << 32, y);
+     #else
+                     auto const yh = stdr::uint_least32_t(y >> 32);

@@ -1,0 +1,32 @@
+# V8 Windows ARM64EC Build Arguments
+#
+# Usage:
+#   cd v8
+#   gn gen out/arm64ec --args="import(\"//gni/arm64ec.gni\")"
+#   ninja -C out/arm64ec d8
+#
+# Or manually pass the args:
+#   gn gen out/arm64ec --args="target_cpu=\"arm64ec\" target_os=\"win\" is_clang=true"
+
+# Target ARM64EC on Windows.
+target_cpu = "arm64ec"
+target_os = "win"
+
+# Must use Clang for compilation (supports --target=arm64ec-windows-msvc).
+is_clang = true
+
+# lld-link does not support ARM64EC, so MSVC link.exe is used automatically.
+# The toolchain handles this: use_lld is overridden to false for arm64ec.
+# If you explicitly set use_lld, it will be ignored for the arm64ec target.
+
+# Pointer compression works on arm64ec (same as arm64, 64-bit arch).
+v8_enable_pointer_compression = true
+
+# ARM64EC does not support pointer authentication (PAC/BTI).
+v8_control_flow_integrity = false
+
+# WebAssembly is supported (uses ARM64 codegen natively).
+v8_enable_webassembly = true
+
+# Use ICU for i18n support.
+v8_enable_i18n_support = true
