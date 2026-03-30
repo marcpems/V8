@@ -622,7 +622,7 @@ void Sampler::DoSample() {
   context.ContextFlags = CONTEXT_FULL;
   if (GetThreadContext(profiled_thread, &context) != 0) {
     v8::RegisterState state;
-#if V8_HOST_ARCH_X64
+#if V8_HOST_ARCH_X64 || V8_HOST_ARCH_ARM64EC
     state.pc = reinterpret_cast<void*>(context.Rip);
     state.sp = reinterpret_cast<void*>(context.Rsp);
     state.fp = reinterpret_cast<void*>(context.Rbp);

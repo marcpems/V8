@@ -47,6 +47,30 @@ asm(
     // Maintain frame pointer.
     "  mov fp, sp                                       \n"
     ".cfi_def_cfa_register fp                           \n"
+#if defined(_M_ARM64EC)
+    // ARM64EC: x23, x24, x28 are reserved by the OS for EC thunking.
+    // Only push the allowed callee-saved registers: x19-x22, x25-x27.
+    "  stp x19, x20, [sp, #-16]!                        \n"
+    ".cfi_offset x19, -32                               \n"
+    ".cfi_offset x20, -24                               \n"
+    "  stp x21, x22, [sp, #-16]!                        \n"
+    ".cfi_offset x21, -48                               \n"
+    ".cfi_offset x22, -40                               \n"
+    "  stp x25, x26, [sp, #-16]!                        \n"
+    ".cfi_offset x25, -64                               \n"
+    ".cfi_offset x26, -56                               \n"
+    "  str x27,      [sp, #-16]!                         \n"
+    ".cfi_offset x27, -80                               \n"
+    // Pass 1st parameter (x0) unchanged (Stack*).
+    // Pass 2nd parameter (x1) unchanged (StackVisitor*).
+    // Save 3rd parameter (x2; IterateStackCallback)
+    "  mov x7, x2                                       \n"
+    // Pass 3rd parameter as sp (stack pointer).
+    "  mov x2, sp                                       \n"
+    "  blr x7                                           \n"
+    // Drop all callee-saved registers (4 pairs * 16 = 64 bytes).
+    "  add sp, sp, #64                                  \n"
+#else  // !_M_ARM64EC
     // x19-x28 are callee-saved.
     "  stp x19, x20, [sp, #-16]!                        \n"
     ".cfi_offset x19, -32                               \n"
@@ -72,6 +96,7 @@ asm(
     "  blr x7                                           \n"
     // Drop all callee-saved registers.
     "  add sp, sp, #80                                  \n"
+#endif  // _M_ARM64EC
     // Load return address and frame pointer.
     "  ldp fp, lr, [sp], #16                            \n"
 #ifdef V8_ENABLE_CONTROL_FLOW_INTEGRITY

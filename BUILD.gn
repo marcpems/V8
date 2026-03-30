@@ -345,13 +345,13 @@ declare_args() {
   # ARM64. Enable it by default for simulator builds and when native code
   # supports it as well. On Mac, control-flow integrity does not work so we
   # avoid enabling it when using the simulator.
-  v8_control_flow_integrity = v8_current_cpu == "arm64" &&
+  v8_control_flow_integrity = (v8_current_cpu == "arm64" || v8_current_cpu == "arm64ec") &&
                               ((v8_target_is_simulator && target_os != "mac") ||
                                arm_control_flow_integrity != "none")
 
   # Enable heap reservation of size 4GB. Only possible for 64bit archs.
-  cppgc_enable_caged_heap =
-      v8_current_cpu == "x64" || v8_current_cpu == "arm64" ||
+    cppgc_enable_caged_heap =
+      v8_current_cpu == "x64" || v8_current_cpu == "arm64" || v8_current_cpu == "arm64ec" ||
       v8_current_cpu == "loong64" || v8_current_cpu == "riscv64"
 
   # Enables additional heap verification phases and checks.
@@ -455,7 +455,8 @@ declare_args() {
 
   # Enable jump table switch for built-in.
   v8_enable_builtin_jump_table_switch =
-      v8_current_cpu == "x64" || v8_current_cpu == "arm64"
+      v8_current_cpu == "x64" || v8_current_cpu == "arm64" ||
+      v8_current_cpu == "arm64ec"
 
   v8_shortcut_strings_in_minor_ms = false
 
@@ -615,6 +616,7 @@ if (v8_enable_concurrent_mksnapshot == "") {
 if (v8_enable_short_builtin_calls == "") {
   v8_enable_short_builtin_calls =
       v8_current_cpu == "x64" || v8_current_cpu == "arm64" ||
+      v8_current_cpu == "arm64ec" ||
       v8_current_cpu == "loong64" || v8_current_cpu == "riscv64"
 }
 if (v8_enable_external_code_space == "") {
@@ -622,6 +624,7 @@ if (v8_enable_external_code_space == "") {
       v8_enable_pointer_compression &&
       v8_enable_pointer_compression_shared_cage &&
       (v8_current_cpu == "x64" || v8_current_cpu == "arm64" ||
+       v8_current_cpu == "arm64ec" ||
        v8_current_cpu == "loong64" || v8_current_cpu == "riscv64")
 }
 if (v8_enable_sparkplug == "") {
@@ -631,7 +634,8 @@ if (v8_enable_maglev == "") {
   v8_enable_maglev =
       v8_enable_turbofan &&
       (v8_current_cpu == "arm" || v8_current_cpu == "x64" ||
-       v8_current_cpu == "arm64" || v8_current_cpu == "s390x" ||
+       v8_current_cpu == "arm64" || v8_current_cpu == "arm64ec" ||
+       v8_current_cpu == "s390x" ||
        v8_current_cpu == "ppc64" || v8_current_cpu == "riscv64" ||
        v8_current_cpu == "loong64")
 }
@@ -741,7 +745,8 @@ if (v8_builtins_profiling_log_file == "default") {
     } else {
       pgo_profile_suffix = ""
     }
-    if ((v8_current_cpu == "x64" || v8_current_cpu == "arm64") &&
+    if ((v8_current_cpu == "x64" || v8_current_cpu == "arm64" ||
+         v8_current_cpu == "arm64ec") &&
         v8_enable_pointer_compression && v8_enable_external_code_space &&
         v8_enable_sandbox) {
       # Note, currently x64 profile can be applied to arm64 but not the other
@@ -761,7 +766,8 @@ if (v8_enable_webassembly && !v8_target_is_simulator &&
   v8_enable_wasm_simd256_revec = true
 }
 
-if (v8_enable_webassembly && v8_current_cpu == "arm64") {
+if (v8_enable_webassembly &&
+    (v8_current_cpu == "arm64" || v8_current_cpu == "arm64ec")) {
   v8_enable_wasm_deinterleaved_mem_ops = true
 }
 
@@ -775,8 +781,8 @@ assert(!v8_disable_write_barriers || v8_enable_single_generation,
 assert(!v8_enable_verify_write_barriers || !v8_disable_write_barriers,
        "Write barriers need to be enabled for verification")
 
-assert(v8_current_cpu == "arm64" || !v8_control_flow_integrity,
-       "Control-flow integrity is only supported on arm64")
+assert(v8_current_cpu == "arm64" || v8_current_cpu == "arm64ec" || !v8_control_flow_integrity,
+  "Control-flow integrity is only supported on arm64 and arm64ec")
 
 assert(!v8_enable_map_packing || !v8_enable_pointer_compression,
        "Map packing does not support pointer compression")
@@ -812,18 +818,19 @@ assert(
 
 assert(
     !v8_enable_pointer_compression_shared_cage || v8_current_cpu == "x64" ||
-        v8_current_cpu == "arm64" || v8_current_cpu == "riscv64" ||
+        v8_current_cpu == "arm64" || v8_current_cpu == "arm64ec" ||
+        v8_current_cpu == "riscv64" ||
         v8_current_cpu == "ppc64" || v8_current_cpu == "s390x" ||
         v8_current_cpu == "loong64",
-    "Sharing a pointer compression cage is only supported on x64, arm64, ppc64, s390x, riscv64 and loong64")
+    "Sharing a pointer compression cage is only supported on x64, arm64, arm64ec, ppc64, s390x, riscv64 and loong64")
 
 assert(!v8_enable_unconditional_write_barriers || !v8_disable_write_barriers,
        "Write barriers can't be both enabled and disabled")
 
 assert(!cppgc_enable_caged_heap || v8_current_cpu == "x64" ||
-           v8_current_cpu == "arm64" || v8_current_cpu == "loong64" ||
-           v8_current_cpu == "riscv64",
-       "CppGC caged heap requires 64bit platforms")
+       v8_current_cpu == "arm64" || v8_current_cpu == "arm64ec" || v8_current_cpu == "loong64" ||
+       v8_current_cpu == "riscv64",
+     "CppGC caged heap requires 64bit platforms")
 
 assert(!cppgc_enable_young_generation || cppgc_enable_caged_heap,
        "Young generation in CppGC requires caged heap")
@@ -1030,6 +1037,7 @@ external_v8_defines = [
   "V8_TARGET_OS_WIN",
   "V8_TARGET_OS_CHROMEOS",
   "V8_TARGET_ARCH_ARM64",
+  "V8_TARGET_ARCH_ARM64EC",
   "V8_TARGET_ARCH_PPC64",
   "V8_TARGET_ARCH_MIPS64",
   "V8_TARGET_ARCH_LOONG64",
@@ -1123,6 +1131,8 @@ if (target_os == "android") {
 # to V8_TARGET_OS_* and V8_HAVE_TARGET_OS defines.
 if (v8_current_cpu == "arm64") {
   enabled_external_v8_defines += [ "V8_TARGET_ARCH_ARM64" ]
+} else if (v8_current_cpu == "arm64ec") {
+  enabled_external_v8_defines += [ "V8_TARGET_ARCH_ARM64EC" ]
 } else if (v8_current_cpu == "ppc64") {
   enabled_external_v8_defines += [ "V8_TARGET_ARCH_PPC64" ]
 } else if (v8_current_cpu == "mips64el") {
@@ -1595,8 +1605,11 @@ config("toolchain") {
       }
     }
   }
-  if (v8_current_cpu == "arm64") {
+  if (v8_current_cpu == "arm64" || v8_current_cpu == "arm64ec") {
     defines += [ "V8_TARGET_ARCH_ARM64" ]
+    if (v8_current_cpu == "arm64ec") {
+      defines += [ "V8_TARGET_ARCH_ARM64EC" ]
+    }
     if (current_cpu == "arm64" && v8_control_flow_integrity && is_clang) {
       # Mark assembly code as BTI-compatible.
       asmflags = [ "-mmark-bti-property" ]
@@ -1877,6 +1890,7 @@ config("strict_warnings") {
   cflags = []
   if (is_clang) {
     if (v8_current_cpu == "x64" || v8_current_cpu == "arm64" ||
+        v8_current_cpu == "arm64ec" ||
         v8_current_cpu == "mips64el" || v8_current_cpu == "riscv64") {
       cflags += [ "-Wshorten-64-to-32" ]
     }
@@ -3325,7 +3339,8 @@ v8_cluster_source_set("v8_initializers") {
     if (v8_enable_drumbrake) {
       if (v8_current_cpu == "x64") {
         sources += [ "src/wasm/interpreter/x64/interpreter-builtins-x64.cc" ]
-      } else if (v8_current_cpu == "arm64") {
+      } else if (v8_current_cpu == "arm64" ||
+                 v8_current_cpu == "arm64ec") {
         sources +=
             [ "src/wasm/interpreter/arm64/interpreter-builtins-arm64.cc" ]
       } else if (v8_current_cpu == "riscv64") {
@@ -3350,7 +3365,7 @@ v8_cluster_source_set("v8_initializers") {
       ### gcmole(arm) ###
       "src/builtins/arm/builtins-arm.cc",
     ]
-  } else if (v8_current_cpu == "arm64") {
+  } else if (v8_current_cpu == "arm64" || v8_current_cpu == "arm64ec") {
     sources += [
       ### gcmole(arm64) ###
       "src/builtins/arm64/builtins-arm64.cc",
@@ -4752,7 +4767,7 @@ v8_header_set("v8_internal_headers") {
     ]
     if (v8_current_cpu == "arm") {
       sources += [ "src/maglev/arm/maglev-assembler-arm-inl.h" ]
-    } else if (v8_current_cpu == "arm64") {
+    } else if (v8_current_cpu == "arm64" || v8_current_cpu == "arm64ec") {
       sources += [ "src/maglev/arm64/maglev-assembler-arm64-inl.h" ]
     } else if (v8_current_cpu == "riscv64") {
       sources += [ "src/maglev/riscv/maglev-assembler-riscv-inl.h" ]
@@ -5060,7 +5075,7 @@ v8_header_set("v8_internal_headers") {
         "src/baseline/arm/baseline-compiler-arm-inl.h",
       ]
     }
-  } else if (v8_current_cpu == "arm64") {
+  } else if (v8_current_cpu == "arm64" || v8_current_cpu == "arm64ec") {
     sources += [
       ### gcmole(arm64) ###
       "src/codegen/arm64/assembler-arm64-inl.h",
@@ -5564,7 +5579,7 @@ if (v8_current_cpu == "x86") {
     "src/compiler/backend/arm/instruction-selector-arm.cc",
     "src/compiler/backend/arm/unwinding-info-writer-arm.cc",
   ]
-} else if (v8_current_cpu == "arm64") {
+} else if (v8_current_cpu == "arm64" || v8_current_cpu == "arm64ec") {
   v8_compiler_sources += [
     ### gcmole(arm64) ###
     "src/compiler/backend/arm64/code-generator-arm64.cc",
@@ -6349,7 +6364,7 @@ v8_cluster_source_set("v8_base_without_compiler") {
         "src/maglev/arm/maglev-assembler-arm.cc",
         "src/maglev/arm/maglev-ir-arm.cc",
       ]
-    } else if (v8_current_cpu == "arm64") {
+    } else if (v8_current_cpu == "arm64" || v8_current_cpu == "arm64ec") {
       sources += [
         "src/maglev/arm64/maglev-assembler-arm64.cc",
         "src/maglev/arm64/maglev-ir-arm64.cc",
@@ -6548,7 +6563,7 @@ v8_cluster_source_set("v8_base_without_compiler") {
       "src/execution/arm/simulator-arm.cc",
       "src/regexp/arm/regexp-macro-assembler-arm.cc",
     ]
-  } else if (v8_current_cpu == "arm64") {
+  } else if (v8_current_cpu == "arm64" || v8_current_cpu == "arm64ec") {
     sources += [
       ### gcmole(arm64) ###
       "src/codegen/arm64/assembler-arm64.cc",
@@ -6578,13 +6593,15 @@ v8_cluster_source_set("v8_base_without_compiler") {
           "src/trap-handler/handler-inside-posix.cc",
           "src/trap-handler/handler-outside-posix.cc",
         ]
-      } else if ((current_cpu == "arm64" || current_cpu == "x64") && is_win) {
+      } else if ((current_cpu == "arm64" || current_cpu == "arm64ec" ||
+                   current_cpu == "x64") && is_win) {
         sources += [
           "src/trap-handler/handler-inside-win.cc",
           "src/trap-handler/handler-outside-win.cc",
         ]
       }
-      if ((current_cpu == "x64" || current_cpu == "arm64") &&
+      if ((current_cpu == "x64" || current_cpu == "arm64" ||
+           current_cpu == "arm64ec") &&
           (is_linux || is_chromeos || is_mac || is_win)) {
         sources += [ "src/trap-handler/handler-outside-simulator.cc" ]
       }
@@ -7175,7 +7192,8 @@ v8_component("v8_libbase") {
 
   if (target_cpu == "x86" || target_cpu == "x64") {
     sources += [ "src/base/cpu/cpu-x86.cc" ]
-  } else if (target_cpu == "arm" || target_cpu == "arm64") {
+  } else if (target_cpu == "arm" || target_cpu == "arm64" ||
+             target_cpu == "arm64ec") {
     sources += [ "src/base/cpu/cpu-arm.cc" ]
   } else if (target_cpu == "riscv64") {
     sources += [ "src/base/cpu/cpu-riscv.cc" ]
@@ -7551,7 +7569,7 @@ v8_source_set("v8_heap_base") {
     sources += [ "src/heap/base/asm/ia32/push_registers_asm.cc" ]
   } else if (current_cpu == "arm") {
     sources += [ "src/heap/base/asm/arm/push_registers_asm.cc" ]
-  } else if (current_cpu == "arm64") {
+  } else if (current_cpu == "arm64" || current_cpu == "arm64ec") {
     sources += [ "src/heap/base/asm/arm64/push_registers_asm.cc" ]
   } else if (current_cpu == "ppc64") {
     sources += [ "src/heap/base/asm/ppc/push_registers_asm.cc" ]

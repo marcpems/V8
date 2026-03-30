@@ -36,7 +36,7 @@ source_set("cpuinfo") {
     ]
   } else if (current_cpu == "arm") {
     sources += [ "src/src/impl_arm_linux_or_android.c" ]
-  } else if (current_cpu == "arm64") {
+  } else if (current_cpu == "arm64" || current_cpu == "arm64ec") {
     sources += [ "src/src/impl_aarch64_linux_or_android.c" ]
   } else if (current_cpu == "mips") {
     sources += [ "src/src/impl_mips_linux_or_android.c" ]

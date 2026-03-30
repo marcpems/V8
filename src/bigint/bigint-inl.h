@@ -466,7 +466,7 @@ static inline digit_t digit_div(digit_t high, digit_t low, digit_t divisor,
   DCHECK(high < divisor);
   DCHECK(divisor != 0);
 #endif
-#if __x86_64__ && (__GNUC__ || __clang__)
+#if __x86_64__ && (__GNUC__ || __clang__) && !defined(_M_ARM64EC)
   digit_t quotient;
   digit_t rem;
   __asm__("divq  %[divisor]"
