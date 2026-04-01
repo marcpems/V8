@@ -84,7 +84,7 @@ if (-not $SkipPrereqs -and -not $BuildOnly -and -not $TestOnly) {
     Write-Host "Visual Studio: $vsPath"
 
     # depot_tools
-    $depotToolsDir = "d:\depot_tools"
+    $depotToolsDir = Join-Path $WorkDir "depot_tools"
     if (-not (Test-Path $depotToolsDir)) {
         Write-Host "Cloning depot_tools..."
         git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git $depotToolsDir
@@ -97,13 +97,25 @@ if (-not $SkipPrereqs -and -not $BuildOnly -and -not $TestOnly) {
     Write-Host "depot_tools: $depotToolsDir"
 }
 
-# Ensure depot_tools is on PATH for subsequent steps
-$depotToolsDir = "d:\depot_tools"
-if (Test-Path $depotToolsDir) {
-    if ($env:PATH -notlike "*depot_tools*") {
-        $env:PATH = "$depotToolsDir;$env:PATH"
+# Ensure depot_tools is on PATH for subsequent steps.
+# Also check common install locations if WorkDir depot_tools doesn't exist yet.
+$depotToolsDir = Join-Path $WorkDir "depot_tools"
+$depotToolsCandidates = @(
+    $depotToolsDir,
+    "d:\depot_tools",
+    "$env:USERPROFILE\depot_tools",
+    "C:\depot_tools"
+)
+foreach ($candidate in $depotToolsCandidates) {
+    if (Test-Path $candidate) {
+        $depotToolsDir = $candidate
+        break
     }
 }
+if ($env:PATH -notlike "*depot_tools*") {
+    $env:PATH = "$depotToolsDir;$env:PATH"
+}
+Write-Host "Using depot_tools: $depotToolsDir"
 
 # Use local VS toolchain (avoids GCS auth issues on personal machines)
 $env:DEPOT_TOOLS_WIN_TOOLCHAIN = "0"
@@ -214,6 +226,7 @@ if (-not $TestOnly) {
             'target_os="win"'
             'is_clang=true'
             'v8_control_flow_integrity=false'
+            'v8_enable_pointer_compression=true'
             'use_lld=false'
             'is_component_build=false'
             'enable_rust=false'

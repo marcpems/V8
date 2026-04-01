@@ -1132,6 +1132,7 @@ if (target_os == "android") {
 if (v8_current_cpu == "arm64") {
   enabled_external_v8_defines += [ "V8_TARGET_ARCH_ARM64" ]
 } else if (v8_current_cpu == "arm64ec") {
+  enabled_external_v8_defines += [ "V8_TARGET_ARCH_ARM64" ]
   enabled_external_v8_defines += [ "V8_TARGET_ARCH_ARM64EC" ]
 } else if (v8_current_cpu == "ppc64") {
   enabled_external_v8_defines += [ "V8_TARGET_ARCH_PPC64" ]
